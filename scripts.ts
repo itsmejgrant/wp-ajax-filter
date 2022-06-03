@@ -78,8 +78,6 @@ class AjaxFilter {
         this.form.addEventListener('submit', async (e: Event) => {
             this.page = 1;
             const posts = await this.fetchPosts(e);
-            console.log('posts: ', posts);
-            
             this.updatePostsContainer(posts);
         });
     }
@@ -101,7 +99,7 @@ class AjaxFilter {
             taxonomies[taxonomy] = value;
         })
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             // @ts-ignore: jQuery comes from WordPress
             jQuery.ajax({
                 type: "get",
@@ -117,6 +115,8 @@ class AjaxFilter {
                     taxonomies: taxonomies
                 },
                 success: (data: ResponseObject) => {
+                    console.log('data: ', data);
+                    
                     if (! data.success) {
                         this.handleError();
                         return;
@@ -126,7 +126,6 @@ class AjaxFilter {
                     resolve(posts);
                     return posts;
                 },
-                error: this.handleError()
             });
         })
     }
