@@ -21,7 +21,9 @@ class AjaxFilter {
         this.page = 1;
         this.loadMoreElement = document.querySelector("[data-load-more]");
         this.errorElement = document.querySelector('[data-posts-error]');
+        this.taxonomies = [];
         this.setDefaultPosts();
+        this.setupTaxonomies();
         this.setupLoadMore();
         this.setupFormListener();
     }
@@ -34,6 +36,14 @@ class AjaxFilter {
             const posts = yield this.fetchPosts();
             this.updatePostsContainer(posts);
         });
+    }
+    /**
+     * Setup the taxonomies property
+     * @returns void
+     */
+    setupTaxonomies() {
+        const taxonomies = document.querySelectorAll('select[data-taxonomy]');
+        taxonomies.forEach((taxonomy) => this.taxonomies.push(taxonomy.getAttribute('data-taxonomy')));
     }
     /**
      * Setup the load more functionality
@@ -65,6 +75,7 @@ class AjaxFilter {
         this.form.addEventListener('submit', (e) => __awaiter(this, void 0, void 0, function* () {
             this.page = 1;
             const posts = yield this.fetchPosts(e);
+            console.log('posts: ', posts);
             this.updatePostsContainer(posts);
         }));
     }
@@ -80,7 +91,12 @@ class AjaxFilter {
         const postType = this.form.getAttribute("data-post-type") || "post";
         const postsPerPage = this.form.getAttribute("data-posts-per-page") || 5;
         const title = ((_a = this.form.querySelector("[data-title]")) === null || _a === void 0 ? void 0 : _a.value) || '';
-        return new Promise((resolve, _reject) => {
+        const taxonomies = {};
+        this.taxonomies.forEach(taxonomy => {
+            const value = document.querySelector(`[data-taxonomy=${taxonomy}]`).value;
+            taxonomies[taxonomy] = value;
+        });
+        return new Promise((resolve, reject) => {
             // @ts-ignore: jQuery comes from WordPress
             jQuery.ajax({
                 type: "get",
@@ -92,12 +108,13 @@ class AjaxFilter {
                     postType: postType,
                     title: title,
                     postsPerPage: postsPerPage,
-                    page: this.page
+                    page: this.page,
+                    taxonomies: taxonomies
                 },
                 success: (data) => {
                     if (!data.success) {
-                        // this.handleError();
-                        return false;
+                        this.handleError();
+                        return;
                     }
                     const posts = data.data;
                     resolve(posts);
@@ -112,6 +129,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError() {
+        const postsContainer = document.querySelector("[data-posts-container]");
+        postsContainer.innerHTML = null;
         this.errorElement.setAttribute('data-posts-show-error', "true");
         this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }

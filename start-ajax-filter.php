@@ -41,6 +41,7 @@ function filter_posts() {
     $title = $_GET['title'];
     $posts_per_page = $_GET['postsPerPage'];
     $page = $_GET['page'];
+    $taxonomies = $_GET['taxonomies'] ?? null;
 
     $args = [
         'post_type' => $post_type,
@@ -48,6 +49,22 @@ function filter_posts() {
         's' => $title,
         'paged' => $page
     ];
+
+    // If they're set, add the taxonomies to the query
+    if ($taxonomies) {
+        $args['tax_query'] = array();
+        $args['tax_query']['relation'] = 'AND';
+
+        foreach ($taxonomies as $key => $value) {
+            if ($value === 'all') continue;
+
+            $args['tax_query'][] = array(
+                'taxonomy' => $key,
+                'field'    => 'slug',
+                'terms'     => $value
+            );
+        }
+    }
 
     $query = new WP_Query($args);
     $posts = $query->get_posts();
