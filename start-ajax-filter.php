@@ -69,11 +69,11 @@ function filter_posts() {
     $query = new WP_Query($args);
     $posts = $query->get_posts();
 
-    if (empty($posts)) {
+    if (empty($posts) && $page === 1) {
         wp_send_json_error();
         wp_die();
     }
-    
+
     wp_send_json_success($posts);
     wp_die();
 }

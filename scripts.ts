@@ -115,14 +115,17 @@ class AjaxFilter {
                     taxonomies: taxonomies
                 },
                 success: (data: ResponseObject) => {
-                    console.log('data: ', data);
-                    
                     if (! data.success) {
                         this.handleError();
                         return;
                     }
 
                     const posts = data.data;
+
+                    if (posts.length === 0) {
+                        this.handleEmpty();
+                    }
+
                     resolve(posts);
                     return posts;
                 },
@@ -137,6 +140,14 @@ class AjaxFilter {
     handleError(): void {
         const postsContainer = document.querySelector("[data-posts-container]");
         postsContainer.innerHTML = null;
+        this.handleEmpty();
+    }
+
+    /**
+     * Display an error message
+     * @returns void
+     */
+    handleEmpty(): void {
         this.errorElement.setAttribute('data-posts-show-error', "true");
         this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
