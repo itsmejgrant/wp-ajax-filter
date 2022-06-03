@@ -19,6 +19,8 @@ class AjaxFilter {
         this.postTemplate = postTemplate;
         this.posts = [];
         this.page = 1;
+        this.loadMoreElement = document.querySelector("[data-load-more]");
+        this.errorElement = document.querySelector('[data-posts-error]');
         this.setDefaultPosts();
         this.setupLoadMore();
         this.setupFormListener();
@@ -38,8 +40,8 @@ class AjaxFilter {
      * @returns void
      */
     setupLoadMore() {
-        const loadMoreButton = document.querySelector("[data-load-more]");
-        loadMoreButton === null || loadMoreButton === void 0 ? void 0 : loadMoreButton.addEventListener("click", () => {
+        var _a;
+        (_a = this.loadMoreElement) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
             this.page += 1;
             this.loadMore();
         });
@@ -61,6 +63,7 @@ class AjaxFilter {
      */
     setupFormListener() {
         this.form.addEventListener('submit', (e) => __awaiter(this, void 0, void 0, function* () {
+            this.page = 1;
             const posts = yield this.fetchPosts(e);
             this.updatePostsContainer(posts);
         }));
@@ -93,11 +96,10 @@ class AjaxFilter {
                 },
                 success: (data) => {
                     if (!data.success) {
-                        this.handleError();
-                        return;
+                        // this.handleError();
+                        return false;
                     }
                     const posts = data.data;
-                    // this.setPosts(posts)
                     resolve(posts);
                     return posts;
                 },
@@ -110,8 +112,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError() {
-        const errorElement = document.querySelector('[data-posts-error]');
-        errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
     /**
      * Get the array of posts

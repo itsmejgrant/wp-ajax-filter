@@ -4,6 +4,8 @@ class AjaxFilter {
     postTemplate: string;
     posts: Array<Element>;
     page: number;
+    loadMoreElement: HTMLElement;
+    errorElement: HTMLElement;
 
     constructor(form = null, postTemplate = null) {
         if (! form) {
@@ -18,6 +20,8 @@ class AjaxFilter {
         this.postTemplate = postTemplate;
         this.posts = [];
         this.page = 1;
+        this.loadMoreElement = document.querySelector("[data-load-more]");
+        this.errorElement = document.querySelector('[data-posts-error]');
 
         this.setDefaultPosts();
         this.setupLoadMore();
@@ -38,8 +42,7 @@ class AjaxFilter {
      * @returns void
      */
     setupLoadMore(): void {
-        const loadMoreButton = document.querySelector("[data-load-more]");
-        loadMoreButton?.addEventListener("click", () => {
+        this.loadMoreElement?.addEventListener("click", () => {
             this.page += 1;
             this.loadMore();   
         });
@@ -61,6 +64,7 @@ class AjaxFilter {
      */
     setupFormListener(): void {
         this.form.addEventListener('submit', async (e: Event) => {
+            this.page = 1;
             const posts = await this.fetchPosts(e);
             this.updatePostsContainer(posts);
         });
@@ -93,12 +97,11 @@ class AjaxFilter {
                 },
                 success: (data: ResponseObject) => {
                     if (! data.success) {
-                        this.handleError();
-                        return;
+                        // this.handleError();
+                        return false;
                     }
 
                     const posts = data.data;
-                    // this.setPosts(posts)
                     resolve(posts);
                     return posts;
                 },
@@ -112,8 +115,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError(): void {
-        const errorElement = document.querySelector('[data-posts-error]');
-        errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
 
     /**
