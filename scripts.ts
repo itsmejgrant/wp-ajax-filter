@@ -29,7 +29,8 @@ class AjaxFilter {
      * @returns Promise<void>
      */
     async setDefaultPosts(): Promise<void> {
-        await this.filter();
+        const posts = await this.fetchPosts();
+        this.updatePostsContainer(posts);
     }
 
     /**
@@ -48,10 +49,10 @@ class AjaxFilter {
      * Load more posts into the container
      * @returns void
      */
-    loadMore() {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        
-        postsContainer.innerHTML = null;
+    async loadMore() {
+        const posts = await this.fetchPosts();
+        const loadMore = true;
+        this.updatePostsContainer(posts, loadMore)
     }
 
     /**
@@ -59,7 +60,10 @@ class AjaxFilter {
      * @returns void
      */
     setupFormListener(): void {
-        this.form.addEventListener('submit', async (e: Event) => await this.filter(e));
+        this.form.addEventListener('submit', async (e: Event) => {
+            const posts = await this.fetchPosts(e);
+            this.updatePostsContainer(posts);
+        });
     }
 
     /**
@@ -67,7 +71,7 @@ class AjaxFilter {
      * @param e Event
      * @returns Promise
      */
-    filter(e = null): Promise<any> {
+    fetchPosts(e = null): Promise<any> {
         if (e) e.preventDefault();
         const postType = this.form.getAttribute("data-post-type") || "post";
         const postsPerPage = this.form.getAttribute("data-posts-per-page") || 5;
@@ -94,8 +98,9 @@ class AjaxFilter {
                     }
 
                     const posts = data.data;
-                    this.setPosts(posts)
+                    // this.setPosts(posts)
                     resolve(posts);
+                    return posts;
                 },
                 error: this.handleError()
             });
@@ -107,8 +112,6 @@ class AjaxFilter {
      * @returns void
      */
     handleError(): void {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
         const errorElement = document.querySelector('[data-posts-error]');
         errorElement.setAttribute('data-posts-show-error', "true");
     }
@@ -128,8 +131,6 @@ class AjaxFilter {
      */
     setPosts(posts: Array<Element>): void {
         this.posts = posts;
-        
-        this.updatePostsContainer(this.posts);
     }
 
     /**
@@ -137,9 +138,12 @@ class AjaxFilter {
      * @param posts Array
      * @returns void
      */
-    updatePostsContainer(posts: Array<any>): void {
+    updatePostsContainer(posts: Array<any>, loadMore: boolean = false): void {
         const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
+
+        if (! loadMore) {
+            postsContainer.innerHTML = null;
+        }
 
         // Hide the error
         const errorElement = document.querySelector('[data-posts-error]');
