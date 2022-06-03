@@ -19,6 +19,8 @@ class AjaxFilter {
         this.postTemplate = postTemplate;
         this.posts = [];
         this.page = 1;
+        this.loadMoreElement = document.querySelector("[data-load-more]");
+        this.errorElement = document.querySelector('[data-posts-error]');
         this.setDefaultPosts();
         this.setupLoadMore();
         this.setupFormListener();
@@ -29,7 +31,8 @@ class AjaxFilter {
      */
     setDefaultPosts() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.filter();
+            const posts = yield this.fetchPosts();
+            this.updatePostsContainer(posts);
         });
     }
     /**
@@ -37,8 +40,8 @@ class AjaxFilter {
      * @returns void
      */
     setupLoadMore() {
-        const loadMoreButton = document.querySelector("[data-load-more]");
-        loadMoreButton === null || loadMoreButton === void 0 ? void 0 : loadMoreButton.addEventListener("click", () => {
+        var _a;
+        (_a = this.loadMoreElement) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
             this.page += 1;
             this.loadMore();
         });
@@ -48,22 +51,29 @@ class AjaxFilter {
      * @returns void
      */
     loadMore() {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
+        return __awaiter(this, void 0, void 0, function* () {
+            const posts = yield this.fetchPosts();
+            const loadMore = true;
+            this.updatePostsContainer(posts, loadMore);
+        });
     }
     /**
      * Setup the form listener for a submit event
      * @returns void
      */
     setupFormListener() {
-        this.form.addEventListener('submit', (e) => __awaiter(this, void 0, void 0, function* () { return yield this.filter(e); }));
+        this.form.addEventListener('submit', (e) => __awaiter(this, void 0, void 0, function* () {
+            this.page = 1;
+            const posts = yield this.fetchPosts(e);
+            this.updatePostsContainer(posts);
+        }));
     }
     /**
      * Filters the posts based on the form attributes
      * @param e Event
      * @returns Promise
      */
-    filter(e = null) {
+    fetchPosts(e = null) {
         var _a;
         if (e)
             e.preventDefault();
@@ -86,12 +96,12 @@ class AjaxFilter {
                 },
                 success: (data) => {
                     if (!data.success) {
-                        this.handleError();
-                        return;
+                        // this.handleError();
+                        return false;
                     }
                     const posts = data.data;
-                    this.setPosts(posts);
                     resolve(posts);
+                    return posts;
                 },
                 error: this.handleError()
             });
@@ -102,10 +112,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError() {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
-        const errorElement = document.querySelector('[data-posts-error]');
-        errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
     /**
      * Get the array of posts
@@ -121,16 +129,17 @@ class AjaxFilter {
      */
     setPosts(posts) {
         this.posts = posts;
-        this.updatePostsContainer(this.posts);
     }
     /**
      * Update the posts container with the new posts
      * @param posts Array
      * @returns void
      */
-    updatePostsContainer(posts) {
+    updatePostsContainer(posts, loadMore = false) {
         const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
+        if (!loadMore) {
+            postsContainer.innerHTML = null;
+        }
         // Hide the error
         const errorElement = document.querySelector('[data-posts-error]');
         errorElement.setAttribute('data-posts-show-error', "false");

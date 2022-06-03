@@ -4,6 +4,8 @@ class AjaxFilter {
     postTemplate: string;
     posts: Array<Element>;
     page: number;
+    loadMoreElement: HTMLElement;
+    errorElement: HTMLElement;
 
     constructor(form = null, postTemplate = null) {
         if (! form) {
@@ -18,6 +20,8 @@ class AjaxFilter {
         this.postTemplate = postTemplate;
         this.posts = [];
         this.page = 1;
+        this.loadMoreElement = document.querySelector("[data-load-more]");
+        this.errorElement = document.querySelector('[data-posts-error]');
 
         this.setDefaultPosts();
         this.setupLoadMore();
@@ -29,7 +33,8 @@ class AjaxFilter {
      * @returns Promise<void>
      */
     async setDefaultPosts(): Promise<void> {
-        await this.filter();
+        const posts = await this.fetchPosts();
+        this.updatePostsContainer(posts);
     }
 
     /**
@@ -37,8 +42,7 @@ class AjaxFilter {
      * @returns void
      */
     setupLoadMore(): void {
-        const loadMoreButton = document.querySelector("[data-load-more]");
-        loadMoreButton?.addEventListener("click", () => {
+        this.loadMoreElement?.addEventListener("click", () => {
             this.page += 1;
             this.loadMore();   
         });
@@ -48,10 +52,10 @@ class AjaxFilter {
      * Load more posts into the container
      * @returns void
      */
-    loadMore() {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        
-        postsContainer.innerHTML = null;
+    async loadMore() {
+        const posts = await this.fetchPosts();
+        const loadMore = true;
+        this.updatePostsContainer(posts, loadMore)
     }
 
     /**
@@ -59,7 +63,11 @@ class AjaxFilter {
      * @returns void
      */
     setupFormListener(): void {
-        this.form.addEventListener('submit', async (e: Event) => await this.filter(e));
+        this.form.addEventListener('submit', async (e: Event) => {
+            this.page = 1;
+            const posts = await this.fetchPosts(e);
+            this.updatePostsContainer(posts);
+        });
     }
 
     /**
@@ -67,7 +75,7 @@ class AjaxFilter {
      * @param e Event
      * @returns Promise
      */
-    filter(e = null): Promise<any> {
+    fetchPosts(e = null): Promise<any> {
         if (e) e.preventDefault();
         const postType = this.form.getAttribute("data-post-type") || "post";
         const postsPerPage = this.form.getAttribute("data-posts-per-page") || 5;
@@ -89,13 +97,13 @@ class AjaxFilter {
                 },
                 success: (data: ResponseObject) => {
                     if (! data.success) {
-                        this.handleError();
-                        return;
+                        // this.handleError();
+                        return false;
                     }
 
                     const posts = data.data;
-                    this.setPosts(posts)
                     resolve(posts);
+                    return posts;
                 },
                 error: this.handleError()
             });
@@ -107,10 +115,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError(): void {
-        const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
-        const errorElement = document.querySelector('[data-posts-error]');
-        errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-error', "true");
+        this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
 
     /**
@@ -128,8 +134,6 @@ class AjaxFilter {
      */
     setPosts(posts: Array<Element>): void {
         this.posts = posts;
-        
-        this.updatePostsContainer(this.posts);
     }
 
     /**
@@ -137,9 +141,12 @@ class AjaxFilter {
      * @param posts Array
      * @returns void
      */
-    updatePostsContainer(posts: Array<any>): void {
+    updatePostsContainer(posts: Array<any>, loadMore: boolean = false): void {
         const postsContainer = document.querySelector("[data-posts-container]");
-        postsContainer.innerHTML = null;
+
+        if (! loadMore) {
+            postsContainer.innerHTML = null;
+        }
 
         // Hide the error
         const errorElement = document.querySelector('[data-posts-error]');

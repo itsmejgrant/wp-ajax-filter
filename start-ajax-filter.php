@@ -41,14 +41,12 @@ function filter_posts() {
     $title = $_GET['title'];
     $posts_per_page = $_GET['postsPerPage'];
     $page = $_GET['page'];
-    $offset = ($page - 1) * $posts_per_page;
 
     $args = [
         'post_type' => $post_type,
         'posts_per_page' => $posts_per_page,
         's' => $title,
-        // 'offset' => $offset
-        'page' => $page
+        'paged' => $page
     ];
 
     $query = new WP_Query($args);
