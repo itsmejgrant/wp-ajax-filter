@@ -1,0 +1,15 @@
+{
+  "name": "start-ajax-filter",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "compile": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.2",
+    "vite": "^2.9.9"
+  }
+}
