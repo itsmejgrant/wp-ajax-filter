@@ -6,6 +6,7 @@ class AjaxFilter {
     page: number;
     loadMoreElement: HTMLElement;
     errorElement: HTMLElement;
+    taxonomies: Array<string>;
 
     constructor(form = null, postTemplate = null) {
         if (! form) {
@@ -22,8 +23,10 @@ class AjaxFilter {
         this.page = 1;
         this.loadMoreElement = document.querySelector("[data-load-more]");
         this.errorElement = document.querySelector('[data-posts-error]');
+        this.taxonomies = [];
 
         this.setDefaultPosts();
+        this.setupTaxonomies();
         this.setupLoadMore();
         this.setupFormListener();
     }
@@ -35,6 +38,15 @@ class AjaxFilter {
     async setDefaultPosts(): Promise<void> {
         const posts = await this.fetchPosts();
         this.updatePostsContainer(posts);
+    }
+
+    /**
+     * Setup the taxonomies property
+     * @returns void
+     */
+    setupTaxonomies() {
+        const taxonomies = document.querySelectorAll('select[data-taxonomy]');
+        taxonomies.forEach((taxonomy) => this.taxonomies.push(taxonomy.getAttribute('data-taxonomy')));
     }
 
     /**
@@ -66,6 +78,8 @@ class AjaxFilter {
         this.form.addEventListener('submit', async (e: Event) => {
             this.page = 1;
             const posts = await this.fetchPosts(e);
+            console.log('posts: ', posts);
+            
             this.updatePostsContainer(posts);
         });
     }
@@ -81,7 +95,13 @@ class AjaxFilter {
         const postsPerPage = this.form.getAttribute("data-posts-per-page") || 5;
         const title = this.form.querySelector<HTMLInputElement>("[data-title]")?.value || '';
 
-        return new Promise((resolve, _reject) => {
+        const taxonomies = {};
+        this.taxonomies.forEach(taxonomy => {
+            const value = document.querySelector<HTMLSelectElement>(`[data-taxonomy=${taxonomy}]`).value;
+            taxonomies[taxonomy] = value;
+        })
+
+        return new Promise((resolve, reject) => {
             // @ts-ignore: jQuery comes from WordPress
             jQuery.ajax({
                 type: "get",
@@ -93,12 +113,13 @@ class AjaxFilter {
                     postType: postType,
                     title: title,
                     postsPerPage: postsPerPage,
-                    page: this.page
+                    page: this.page,
+                    taxonomies: taxonomies
                 },
                 success: (data: ResponseObject) => {
                     if (! data.success) {
-                        // this.handleError();
-                        return false;
+                        this.handleError();
+                        return;
                     }
 
                     const posts = data.data;
@@ -115,6 +136,8 @@ class AjaxFilter {
      * @returns void
      */
     handleError(): void {
+        const postsContainer = document.querySelector("[data-posts-container]");
+        postsContainer.innerHTML = null;
         this.errorElement.setAttribute('data-posts-show-error', "true");
         this.errorElement.setAttribute('data-posts-show-load-more', "false");
     }
@@ -123,7 +146,7 @@ class AjaxFilter {
      * Get the array of posts
      * @returns Array<Element> array of posts
      */
-    getPosts() {
+    getPosts(): Array<Element> {
         return this.posts;
     }
 
