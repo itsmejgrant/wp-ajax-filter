@@ -171,24 +171,30 @@ class AjaxFilter {
         const errorElement = document.querySelector('[data-posts-error]');
         errorElement.setAttribute('data-posts-show-error', "false");
         posts.forEach(post => {
-            const article = this.stringToHTML(this.postTemplate);
+            const article = this.initialisePostTemplate(post, this.postTemplate);
+            // const article = this.stringToHTML(this.postTemplate);
             // const postObject = this.createPostObject(post);
-            const dataAttributes = ['id', 'title', 'content', 'excerpt', 'date'];
-            const postObject = {
-                id: post.ID,
-                title: post.post_title,
-                content: post.post_content,
-                excerpt: post.post_excerpt,
-                date: post.post_date
-            };
-            dataAttributes.forEach(attr => {
-                const selector = article.querySelector(`[data-post-${attr}]`);
-                if (!this.elementExists(selector))
-                    return;
-                selector.innerHTML = postObject[attr];
-            });
+            // const dataAttributes = ['id', 'title', 'content', 'excerpt', 'date'];
             postsContainer.insertAdjacentElement('beforeend', article);
         });
+    }
+    /**
+     * Assigns the specified post content to the template
+     *
+     * @param PostObject the post object
+     * @param string the post template
+     * @returns Element
+     */
+    initialisePostTemplate(post, template) {
+        const postTemplate = this.stringToHTML(template);
+        for (const key in post) {
+            const formattedKey = key.toLowerCase().replace('_', '-');
+            const selector = postTemplate.querySelector(`[data-${formattedKey}]`);
+            if (!this.elementExists(selector))
+                continue;
+            selector.innerHTML = post[key];
+        }
+        return postTemplate;
     }
     /**
      * Convert a string of a HTML element to valid HTML
