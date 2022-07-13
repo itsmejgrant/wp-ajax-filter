@@ -7,6 +7,7 @@ class AjaxFilter {
     loadMoreElement: HTMLElement;
     errorElement: HTMLElement;
     taxonomies: Array<string>;
+    acfFields: any;
 
     constructor(form = null, postTemplate = null) {
         if (! form) {
@@ -24,6 +25,12 @@ class AjaxFilter {
         this.loadMoreElement = document.querySelector("[data-load-more]");
         this.errorElement = document.querySelector('[data-posts-error]');
         this.taxonomies = [];
+        this.acfFields = [];
+
+        // Assign the ACF values
+        this.stringToHTML(this.postTemplate).querySelectorAll('[data-acf]').forEach(field => {
+            this.acfFields.push(field.getAttribute('data-acf'));
+        });
 
         this.setDefaultPosts();
         this.setupTaxonomies();
@@ -112,7 +119,8 @@ class AjaxFilter {
                     title: title,
                     postsPerPage: postsPerPage,
                     page: this.page,
-                    taxonomies: taxonomies
+                    taxonomies: taxonomies,
+                    acfFields: this.acfFields
                 },
                 success: (data: ResponseObject) => {
                     if (! data.success) {
@@ -203,16 +211,22 @@ class AjaxFilter {
      * @returns Element
      */
     initialisePostTemplate(post: PostObject, template: string): Element {
-        const postTemplate = this.stringToHTML(template);        
-
+        const postTemplate = this.stringToHTML(template);                
+        
         for (const key in post) {
             const formattedKey = key.toLowerCase().replace('_', '-');
-            const selector = postTemplate.querySelector(`[data-${formattedKey}]`);
+            const selector = postTemplate.querySelector(`[data-${formattedKey}]`);        
             
-            if (! this.elementExists(selector)) continue;
+            if (! this.elementExists(selector) || key === 'acf') continue;
             
             selector.innerHTML = post[key];
         }
+
+        // Also grab any ACF fields
+        post.acf.forEach(field => {
+            const selector = postTemplate.querySelector(`[data-acf=${field.key}]`);        
+            selector.textContent = field.value;
+        })
         
         return postTemplate;
     }
@@ -248,6 +262,7 @@ interface ResponseObject {
 } 
 
 interface PostObject {
+    acf: Array<any>
     ID: number
     comment_count: string
     comment_status: string

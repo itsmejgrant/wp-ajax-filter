@@ -31,7 +31,7 @@ function start_ajax_filter_enqueue_style_scripts(): void
     }
 
     wp_enqueue_style('start_ajax_filter_style', START_AJAX_FILTER_PLUGIN_PATH . '/styles.css', '', '1.0');
-    wp_enqueue_script('start_ajax_filter_script', START_AJAX_FILTER_PLUGIN_PATH . '/scripts.js', array('jquery'), '1.0');
+    wp_enqueue_script('start_ajax_filter_script', START_AJAX_FILTER_PLUGIN_PATH . '/scripts.js', array('jquery', 'acf'), '1.0');
     wp_localize_script('start_ajax_filter_script', 'start_ajax_filter_object', array('ajax_url' => admin_url('admin-ajax.php')));
 }
 add_action('init', 'start_ajax_filter_enqueue_style_scripts');
@@ -42,6 +42,7 @@ function filter_posts() {
     $posts_per_page = $_GET['postsPerPage'];
     $page = $_GET['page'];
     $taxonomies = $_GET['taxonomies'] ?? null;
+    $acf_fields = $_GET['acfFields'] ?? null;
 
     $args = [
         'post_type' => $post_type,
@@ -68,6 +69,15 @@ function filter_posts() {
 
     $query = new WP_Query($args);
     $posts = $query->get_posts();
+
+    // Grab any ACF values
+    foreach ($posts as $post) {
+        $post->acf = [];
+        foreach($acf_fields as $index => $acf_field) {
+            $post->acf[$index]['key'] = $acf_field;
+            $post->acf[$index]['value'] = get_post_custom_values($acf_field, $post->ID)[0];
+        }
+    }
 
     if (empty($posts) && $page === 1) {
         wp_send_json_error();

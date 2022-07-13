@@ -22,6 +22,11 @@ class AjaxFilter {
         this.loadMoreElement = document.querySelector("[data-load-more]");
         this.errorElement = document.querySelector('[data-posts-error]');
         this.taxonomies = [];
+        this.acfFields = [];
+        // Assign the ACF values
+        this.stringToHTML(this.postTemplate).querySelectorAll('[data-acf]').forEach(field => {
+            this.acfFields.push(field.getAttribute('data-acf'));
+        });
         this.setDefaultPosts();
         this.setupTaxonomies();
         this.setupLoadMore();
@@ -108,7 +113,8 @@ class AjaxFilter {
                     title: title,
                     postsPerPage: postsPerPage,
                     page: this.page,
-                    taxonomies: taxonomies
+                    taxonomies: taxonomies,
+                    acfFields: this.acfFields
                 },
                 success: (data) => {
                     if (!data.success) {
@@ -190,10 +196,15 @@ class AjaxFilter {
         for (const key in post) {
             const formattedKey = key.toLowerCase().replace('_', '-');
             const selector = postTemplate.querySelector(`[data-${formattedKey}]`);
-            if (!this.elementExists(selector))
+            if (!this.elementExists(selector) || key === 'acf')
                 continue;
             selector.innerHTML = post[key];
         }
+        // Also grab any ACF fields
+        post.acf.forEach(field => {
+            const selector = postTemplate.querySelector(`[data-acf=${field.key}]`);
+            selector.textContent = field.value;
+        });
         return postTemplate;
     }
     /**

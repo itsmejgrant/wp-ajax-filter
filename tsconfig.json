@@ -2,7 +2,8 @@
     "compilerOptions": {
       "target": "es6",
       "sourceMap": true,
-      "lib": [ "es2017", "DOM" ]
+      "lib": [ "es2017", "DOM" ],
+      "typeRoots": ["./node_modules/@types", "./src/types"]
     },
     "files": [
         "scripts.ts",
