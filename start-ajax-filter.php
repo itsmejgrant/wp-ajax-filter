@@ -43,13 +43,30 @@ function filter_posts() {
     $page = $_GET['page'];
     $taxonomies = $_GET['taxonomies'] ?? null;
     $acf_fields = $_GET['acfFields'] ?? null;
-
     $args = [
         'post_type' => $post_type,
         'posts_per_page' => $posts_per_page,
-        's' => $title,
+        '_meta_or_title' => $title,
         'paged' => $page
     ];
+    $meta_query = [];
+
+    // Loop through ACF keys and add make them searchable
+    foreach ($acf_fields as $acf_field) {
+        $meta_query[] = [
+            'key' => $acf_field,
+            'value' => $title,
+            'compare' => 'LIKE'
+        ];
+    }
+
+    // If there is more than one meta query 'or' them
+    if(count($meta_query) > 1) {
+        $meta_query['relation'] = 'OR';
+    }
+
+    // Push meta query into $args  
+    $args['meta_query'] = $meta_query;
 
     // If they're set, add the taxonomies to the query
     if ($taxonomies) {
@@ -89,3 +106,35 @@ function filter_posts() {
 }
 add_action( 'wp_ajax_nopriv_filter_posts', 'filter_posts' );
 add_action( 'wp_ajax_filter_posts', 'filter_posts' );
+
+/**
+ * Modify the search so that we can search through custom fields as well
+ * @param $query
+ * 
+ * https://wordpress.stackexchange.com/questions/78649/using-meta-query-meta-query-with-a-search-query-s
+ */
+function start_ajax_filter_modify_search($query)
+{
+    if (! $query->get('_meta_or_title')) {
+        return;
+    }   
+
+    $title = $query->get('_meta_or_title');
+    add_filter('get_meta_sql', function($sql) use ($title) {
+            global $wpdb;
+
+            // Only run once:
+            static $nr = 0; 
+            if( 0 != $nr++ ) return $sql;
+
+            // Modified WHERE
+            $sql['where'] = sprintf(
+                " AND ( %s OR %s ) ",
+                $wpdb->prepare( "{$wpdb->posts}.post_title like '%%%s%%'", $title),
+                mb_substr( $sql['where'], 5, mb_strlen( $sql['where'] ) )
+            );
+
+            return $sql;
+    });
+};
+add_action('pre_get_posts', 'start_ajax_filter_modify_search');
