@@ -145,8 +145,9 @@ class AjaxFilter {
      * @returns void
      */
     handleEmpty() {
-        this.errorElement.setAttribute('data-posts-show-error', "true");
-        this.errorElement.setAttribute('data-posts-show-load-more', "false");
+        var _a, _b;
+        (_a = this.errorElement) === null || _a === void 0 ? void 0 : _a.setAttribute('data-posts-show-error', "true");
+        (_b = this.errorElement) === null || _b === void 0 ? void 0 : _b.setAttribute('data-posts-show-load-more', "false");
     }
     /**
      * Get the array of posts

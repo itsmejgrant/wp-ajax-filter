@@ -16,7 +16,8 @@ if (!defined('ABSPATH')) {
 }
 
 define('START_AJAX_FILTER_ROOT_DIR_PATH', plugin_dir_path(__FILE__));
-define('START_AJAX_FILTER_PLUGIN_PATH', plugins_url('start-ajax-filter'));
+define('START_AJAX_FILTER_PLUGIN_PATH', plugins_dir_url('start-ajax-filter'));
+define('START_AJAX_FILTER_VERSION', '1.0');
 
 /**
  * Enqueues the plugins custom styling and scripts
@@ -29,8 +30,7 @@ function start_ajax_filter_enqueue_style_scripts(): void
     if (is_admin()) {
         return;
     }
-
-    wp_enqueue_script('start_ajax_filter_script', START_AJAX_FILTER_PLUGIN_PATH . '/scripts.js', array('jquery'), '1.0');
+    wp_enqueue_script('start_ajax_filter_script', START_AJAX_FILTER_ROOT_DIR_PATH . '/scripts.js', array('jquery'), START_AJAX_FILTER_VERSION);
     wp_localize_script('start_ajax_filter_script', 'start_ajax_filter_object', array('ajax_url' => admin_url('admin-ajax.php')));
 }
 add_action('init', 'start_ajax_filter_enqueue_style_scripts');
