@@ -15,8 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('START_AJAX_FILTER_ROOT_DIR_PATH', plugin_dir_path(__FILE__));
-define('START_AJAX_FILTER_PLUGIN_PATH', plugins_dir_url('start-ajax-filter'));
+define('START_AJAX_FILTER_ROOT_DIR_PATH', plugin_dir_url(__FILE__));
 define('START_AJAX_FILTER_VERSION', '1.0');
 
 /**
